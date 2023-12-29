@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Data.Entities;
 
 namespace Labolatorium3_app.Models
 {
@@ -9,5 +9,6 @@ namespace Labolatorium3_app.Models
         void Update(Contact book);
         List<Contact> FindAll();
         Contact? FindById(int id);
+        List<OrganizationEntity> FindAllOrganizations();
     }
 }

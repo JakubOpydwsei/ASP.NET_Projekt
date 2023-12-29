@@ -1,31 +1,36 @@
-﻿using Labolatorium3_app.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Labolatorium3_app.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Labolatorium3_app.Controllers
 {
-    public class Contactcontroller : Controller
+    //[Authorize]
+    //[Authorize(Roles = "Admin")]
+    public class ContactController : Controller
     {
-        static readonly Dictionary<int, Contact> _contacts = new Dictionary<int, Contact>();
-        static int id = 1;
-
-
         private readonly IContactService _contactService;
-
-        public Contactcontroller(IContactService contactService)
+        public ContactController(IContactService contactService)
         {
-           _contactService = contactService;
+            _contactService = contactService;
         }
-
-
         public IActionResult Index()
         {
             return View(_contactService.FindAll());
         }
 
+
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+
+            var list = _contactService.FindAllOrganizations()
+                .Select(e => new SelectListItem()
+                {
+                    Text = e.Name,
+                    Value = e.Id.ToString(),
+                }).ToList();
+            return View(new Contact() { Organizations = list });
         }
 
         [HttpPost]
@@ -40,17 +45,25 @@ namespace Labolatorium3_app.Controllers
             {
                 return View(model);
             }
-
         }
-        
         [HttpGet]
         public IActionResult Update(int id)
         {
-            return View(_contactService.FindById(id));
+            var contact = _contactService.FindById(id);
+            contact.Organizations = _contactService.FindAllOrganizations()
+            .Select(e => new SelectListItem()
+            {
+                Text = e.Name,
+                Value = e.Id.ToString(),
+            }).ToList();
+
+        return View(contact);
+
         }
+
         [HttpPost]
-        public IActionResult Update(Contact model) 
-        { 
+        public IActionResult Update(Contact model)
+        {
             if (ModelState.IsValid)
             {
                 _contactService.Update(model);
@@ -60,25 +73,75 @@ namespace Labolatorium3_app.Controllers
             {
                 return View(model);
             }
-            
         }
+
+
+
+
 
         [HttpGet]
-        public IActionResult Delete(int id) 
+        public IActionResult Delete(int id)
         {
-            return View(_contactService.FindById(id));
+            var contact = _contactService.FindById(id);
+            if (contact != null)
+            {
+                return View(contact);
+            }
+            return NotFound();
         }
 
-        [HttpPost]
-        public IActionResult Delete(Contact model)
+        [HttpPost, ActionName("Delete")]
+        public IActionResult DeleteConfirmed(int id)
         {
-            _contactService.Delete(model.Id);
+            _contactService.Delete(id);
             return RedirectToAction("Index");
         }
 
-        public IActionResult Details(int id) 
+
+        [HttpGet]
+        public IActionResult Details(int id)
         {
-            return View(_contactService.FindById(id));
+            var contact = _contactService.FindById(id);
+            if (contact != null)
+            {
+                return View(contact);
+            }
+            return NotFound();
         }
+
+
+
+
+
+
+
+
+        public IActionResult CreateApi()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult CreateApi(Contact c)
+        {
+            if (ModelState.IsValid)
+            {
+                _contactService.Add(c);
+                return RedirectToAction(nameof(Index));
+            }
+            return View();
+        }
+
+        // GET: ContactController/Edit/5
+        public ActionResult Edit(int id)
+        {
+            return View();
+        }
+
+
+
+
+
     }
 }
